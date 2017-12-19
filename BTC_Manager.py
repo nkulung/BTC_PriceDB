@@ -12,32 +12,48 @@ def createTable():
     c.execute('CREATE TABLE IF NOT EXISTS BTC_Price(Datestamp DATE, Price REAL)')
 
 def getPrice():
-    s = requests.get('https://www.coinbase.com/charts').text
+    price = ''
+    s = requests.get('https://www.worldcoinindex.com/coin/bitcoin').text
     soup = bs(s,"html.parser")
-    btcPrice = soup.find("li", {"class": "top-balance"})
-    btcPriceRaw = btcPrice.text
-    btcPriceInt = btcPriceRaw.split()
-    btcPriceInt = btcPriceInt[3].replace("$","")
+    btcPrice = soup.find("td", {"class" : "coinprice"})
+    btcString = btcPrice.getText()
+    for h in btcString:
+        if(h.isdigit()):
+            price += h
+    num = price[:-2]
+    dec = price[-2:]
+    string = num + '.' + dec
     try:
-        btcPriceFloat = float(btcPriceInt)
+        price = float(string)
     except ValueError:
-        btcPriceInt = btcPriceInt.replace(",","")
-        btcPriceFloat = float(btcPriceInt)
-    return btcPriceFloat
+        print("Price could not be retrieved")
+    return price
 
 def appendData(btcPriceFloat):
+    if(btcPriceFloat == 0):
+        print("Price not found")
     now = datetime.datetime.now()
     date = now.strftime("%m-%d-%Y %H:%M")
     c.execute("INSERT INTO BTC_Price(Datestamp,Price) VALUES (?,?)",(date,btcPriceFloat,))
     conn.commit()
     conn.close()
+    return btcPriceFloat, date
+
+def success(price, date):
+    print('---------------------------------------')
+    print("Bitcoin price: $" + str(price))
+    print("Current date and time: " + date)
+    print("Successfully added to the database")
+    print('---------------------------------------')
+    input("Press ENTER to EXIT")
 
 
 
 def main():
     createTable()
     price = getPrice()
-    appendData(price)
+    price, date = appendData(price)
+    success(price, date)
 
 main()
 
