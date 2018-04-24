@@ -36,7 +36,6 @@ def appendData(btcPriceFloat):
     date = now.strftime("%m-%d-%Y %H:%M")
     c.execute("INSERT INTO BTC_Price(Datestamp,Price) VALUES (?,?)",(date,btcPriceFloat,))
     conn.commit()
-    conn.close()
     return btcPriceFloat, date
 
 def success(price, date):
@@ -45,16 +44,49 @@ def success(price, date):
     print("Current date and time: " + date)
     print("Successfully added to the database")
     print('---------------------------------------')
-    input("Press ENTER to EXIT")
 
+def query(choice):
+    if(choice == 1):
+        print("CHOICE 1")
+        queryByDate()
+    if(choice == 2):
+        print("CHOICE 2")
+    if(choice == 3):
+        sys.exit()
+        
+def queryByDate():
+    while(True):
+        try:
+            dateRange = input("Please enter a date range (i.e. '02-02-2018, 03-02-2018'): ")
+            startDate, endDate = dateRange.split(",",1)
+        except ValueError:
+            print("Input is invalid, format is '02-02-2018, 03-02-2018' without quotes")
+            continue
+        break
+    startDate = startDate.lstrip(" ")
+    endDate = endDate.lstrip(" ")
+    startDate += " 00:00"
+    endDate += " 23:59"
+    startDate = datetime.datetime.strptime(startDate, "%m-%d-%Y %H:%M")
+    endDate = datetime.datetime.strptime(endDate, "%m-%d-%Y %H:%M")
+    currentDate = datetime.datetime.now()
+    currentDate = currentDate.strftime("%m-%d-%Y %H:%M")
+    print(currentDate)
+    print(startDate, endDate)
 
+    c.execute("SELECT * FROM BTC_Price  WHERE  Datestamp BETWEEN (?) AND (?)", (startDate,endDate,))
+    rows = c.fetchall()
+    print(rows)
 
+    
 def main():
     createTable()
     price = getPrice()
     price, date = appendData(price)
     success(price, date)
-
+    choice = int(input("Enter 1 to query database by date, 2 to query by price, 3 to EXIT: "))
+    query(choice)
+    
 main()
 
     
